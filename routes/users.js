@@ -8,7 +8,7 @@ var authenticate = require('../authenticate');
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   //res.send('respond with a resource');
   User.find({}, {_id: false, username: true})
   .then((users) => {
@@ -56,21 +56,14 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
+  res.cookie("session-id", token);
   res.setHeader('Content-Type', 'application/json');
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 });
 
-router.get('/logout', (req, res, next) => {
-  console.log(req.user);
-  if(req.user) {
-    req.session.destroy();
-    res.clearCookie('session-id');
-    res.redirect('/');
-  } else {
-    var err = new Error('Yo are not logged in!');
-    err.status = 403;
-    next(err);
-  }
+router.get('/logout', authenticate.verifyUser, (req, res) => {
+  res.clearCookie('session-id');
+  res.redirect('/');
 });
 
 module.exports = router;

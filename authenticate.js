@@ -15,8 +15,15 @@ exports.getToken = (user) => {
     return jwt.sign(user, config.secretKey, {expiresIn: 3600});
 };
 
+var cookieExtractor = function(req) {
+    var token = null;
+    if (req && req.cookies) token = req.cookies['session-id'];
+    return token;
+  };
+
 var opts = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+//opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = config.secretKey;
 
 exports.jwtPassport = passport.use(new JwtStrategy(opts,
@@ -27,6 +34,7 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
                 return done(err, false);
             }
             else if (user) {
+                console.log(user);
                 return done(null, user);
             }
             else {
@@ -36,3 +44,35 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
     }));
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+exports.verifyAdmin = (req, res, next) => {
+    if(req.user) {
+        if(req.user.admin === true) {
+            next();
+        } else {
+            var err = new Error("Not an admin");
+            err.status = 403;
+            next(err);
+        }
+    } else {
+        var err = new Error("User not found");
+        err.status = 401;
+        next(err);
+    }
+};
+
+exports.verifyOrdinaryUser = (req, res, next) => {
+    if(req.user) {
+        if(req.user.admin === false) {
+            next();
+        } else {
+            var err = new Error("Admin not allowed");
+            err.status = 403;
+            next(err);
+        }
+    } else {
+        var err = new Error("User not found");
+        err.status = 401;
+        next(err);
+    }
+};
