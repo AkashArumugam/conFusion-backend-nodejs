@@ -34,7 +34,7 @@ router.post('/signup', (req, res, next) => {
         user.firstname = req.body.firstname;
       if (req.body.lastname)
         user.lastname = req.body.lastname;
-      //req.body.admin = false;
+        //user.admin = req.body.admin;
       user.save((err, user) => {
         if (err) {
           res.statusCode = 500;
